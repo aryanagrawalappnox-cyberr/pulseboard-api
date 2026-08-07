@@ -1,4 +1,5 @@
 import express from 'express';
+import projectRouter from './routes/projects.routes.js';
 
 const app = express();
 
@@ -14,6 +15,8 @@ app.get('/health', (req,res) =>{
    status: "ok"
 });
 });
+
+app.use('/api/v1/projects', projectRouter);
 
 
 app.use((err,req,res,next) => {
