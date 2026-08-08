@@ -20,5 +20,51 @@ const projects = [
 ];
 
 export function getAllProjectsData() {
-    return projects;
+  return projects;
+}
+
+export function getProjectById(id) {
+  return projects.find((project) => project.id === id);
+}
+
+export function createProject(projectData) {
+  const { title, description, userId } = projectData;
+
+  const nextId = projects.length === 0 ? 1 : projects[projects.length - 1].id + 1;
+
+  const newProject = {
+    id: nextId,
+    title,
+    description,
+    userId,
+  };
+
+  projects.push(newProject);
+
+  return newProject;
+}
+
+export function updateProject(projectId, projectData){
+
+  const project = getProjectById(projectId);
+
+  if (!project) {
+        return undefined;
+    }
+
+  Object.assign(project, projectData);
+
+  return project;
+}
+
+export function deleteProject(projectId) {
+  const projectIndex = projects.findIndex((p) => p.id === projectId);
+
+  if (projectIndex === -1) {
+    return undefined;
+  }
+
+  const deletedProject = projects.splice(projectIndex, 1);
+
+  return deletedProject;
 }

@@ -1,32 +1,41 @@
-import express from 'express';
-import projectRouter from './routes/projects.routes.js';
+import express from "express";
+import projectRoutes from "./routes/projects.routes.js";
 
 const app = express();
 
+// Request Logging Middleware
 app.use((req, res, next) => {
-    
-    const timeStamps = new Date();
-    console.log(`[${timeStamps.toISOString()}] ${req.method} ${req.originalUrl}`);
-     next();
+  const timeStamp = new Date();
+
+  console.log(
+    `[${timeStamp.toISOString()}] ${req.method} ${req.originalUrl}`
+  );
+
+  next();
 });
 
-app.get('/health', (req,res) =>{
-   res.json({
-   status: "ok"
+// JSON Body Parser Middleware
+app.use(express.json());
+
+// Health Check Endpoint
+app.get("/health", (req, res) => {
+  res.json({
+    status: "ok",
+  });
 });
-});
 
-app.use('/api/v1/projects', projectRouter);
+// Project Routes
+app.use("/api/v1/projects", projectRoutes);
 
 
-app.use((err,req,res,next) => {
-   console.error(err);
-   res.status(500).json({
+// Error Handling Middleware
+app.use((err, req, res, next) => {
+  console.error(err);
+
+  return res.status(500).json({
     success: false,
-    message: err.message
-})
+    message: err.message,
+  });
 });
-
-
 
 export default app;
