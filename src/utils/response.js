@@ -5,12 +5,13 @@ export function sendSuccess(res, statusCode, data) {
     });
 }
 
-export function sendError(res, statusCode, message) {
+export function sendError(res, statusCode, code, message, details = []) {
     return res.status(statusCode).json({
         success: false,
         error: {
-           code,
-           message
-       }
+            code,
+            message,
+            details
+        }
     });
 }
