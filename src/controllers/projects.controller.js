@@ -4,9 +4,24 @@ import { createProjectSchema } from "../schemas/project.schema.js";
 import { formatValidationErrors } from "../utils/validation.js";
 
 export const getAllProjects = (req, res) => {
-  const projects = getAllProjectsData();
 
-  return sendSuccess(res, 200, projects);
+  const pageNumber = Number(req.query.page) || 1;
+  const limitNumber = Number(req.query.limit) || 10;
+  const userId = Number(req.query.userId);
+  const sort = req.query.sort;
+
+  let projects = getAllProjectsData();
+
+  if(userId !== undefined) projects = projects.filter(project => project.userId === userId);
+
+  if(sort == "title") projects = projects.sort((a, b) => a.title.localeCompare(b.title));
+
+  const startIndex = (pageNumber - 1) * limitNumber;
+  const endIndex = startIndex + limitNumber;
+
+   projects = projects.slice(startIndex, endIndex);
+
+   return sendSuccess(res, 200, projects);
 };
 
 export const getProjectByIdController = (req, res) => {
