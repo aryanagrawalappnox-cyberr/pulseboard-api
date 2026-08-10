@@ -1,3 +1,5 @@
+import pool from "../db.js";
+
 const projects = [
   {
     id: 1,
@@ -121,29 +123,32 @@ const projects = [
   },
 ];
 
-export function getAllProjectsData() {
-  return projects;
+export async function getAllProjectsData() {
+    const result = await pool.query("SELECT * FROM projects");
+
+    return result.rows;
 }
 
-export function getProjectById(id) {
-  return projects.find((project) => project.id === id);
+export async function getProjectById(projectId) {
+    const result = await pool.query(
+        "SELECT * FROM projects WHERE id = $1",
+        [projectId]
+    );
+
+    return result.rows[0];
 }
 
-export function createProject(projectData) {
-  const { title, description, userId } = projectData;
+export async function createProject(projectData) {
+    const { title, description, owner_id } = projectData;
 
-  const nextId = projects.length === 0 ? 1 : projects[projects.length - 1].id + 1;
+    const result = await pool.query(
+        `INSERT INTO projects (title, description, owner_id)
+         VALUES ($1, $2, $3)
+         RETURNING *`,
+        [title, description, owner_id]
+    );
 
-  const newProject = {
-    id: nextId,
-    title,
-    description,
-    userId,
-  };
-
-  projects.push(newProject);
-
-  return newProject;
+    return result.rows[0];
 }
 
 export function updateProject(projectId, projectData){

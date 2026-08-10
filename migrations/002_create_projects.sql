@@ -1,0 +1,15 @@
+CREATE TABLE projects (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+
+    title VARCHAR(100) NOT NULL,
+
+    description TEXT,
+
+    owner_id INTEGER NOT NULL,
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (owner_id)
+        REFERENCES users(id)
+        ON DELETE RESTRICT
+);

@@ -1,3 +1,5 @@
+import pool from "../db.js";
+
 const users = [
   {
     id: 1,
@@ -16,4 +18,16 @@ const users = [
   },
 ];
 
-export default users;
+export async function createUser(userData) {
+    const { name, email } = userData;
+
+    const result = await pool.query(
+        `INSERT INTO users (name, email)
+         VALUES ($1, $2)
+         RETURNING *`,
+        [name, email]
+    );
+
+    return result.rows[0];
+}
+

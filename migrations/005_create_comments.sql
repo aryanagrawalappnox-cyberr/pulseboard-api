@@ -1,0 +1,13 @@
+CREATE TABLE comments (
+    id INTEGER GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+
+    content TEXT NOT NULL,
+
+    task_id INTEGER NOT NULL,
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (task_id)
+        REFERENCES tasks(id)
+        ON DELETE CASCADE
+);

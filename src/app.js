@@ -1,5 +1,6 @@
 import express from "express";
 import projectRoutes from "./routes/projects.routes.js";
+import usersRoutes from "./routes/users.routes.js";
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.get("/health", (req, res) => {
 
 // Project Routes
 app.use("/api/v1/projects", projectRoutes);
+app.use("/api/v1/users", usersRoutes);
 
 
 // Error Handling Middleware
