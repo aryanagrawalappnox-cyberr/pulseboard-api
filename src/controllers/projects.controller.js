@@ -25,7 +25,10 @@ import { formatValidationErrors } from "../utils/validation.js";
 // };
 
 export const getAllProjects = async (req, res) => {
-    const projects = await getAllProjectsData();
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 10;
+
+    const projects = await getAllProjectsData(page, limit);
 
     return sendSuccess(res, 200, projects);
 };
@@ -52,20 +55,20 @@ export const createProjectController = async (req, res) => {
   return sendSuccess(res, 201, newProject);
 };
 
-export const updateProjectController = (req,res) => {
+export const updateProjectController = async (req,res) => {
 
     const projectId = Number(req.params.projectId);
-    const updatedProject = updateProject(projectId, req.body);
+    const updatedProject = await updateProject(projectId, req.body);
 
     if (!updatedProject) return sendError(res, 404, "Project not found");
 
     return sendSuccess(res, 200, updatedProject);
 }
 
-export const deleteProjectController = (req, res) => {
+export const deleteProjectController = async (req, res) => {
     const projectId = Number(req.params.projectId);
 
-    const deletedProject = deleteProject(projectId);
+    const deletedProject = await deleteProject(projectId);
 
     if (!deletedProject) return sendError(res, 404, "Project not found");
 

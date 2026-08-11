@@ -123,8 +123,17 @@ const projects = [
   },
 ];
 
-export async function getAllProjectsData() {
-    const result = await pool.query("SELECT * FROM projects");
+export async function getAllProjectsData(userId, page = 1, limit = 10) {
+    const offset = (page - 1) * limit;
+const result = await pool.query(
+        `SELECT *
+         FROM projects
+         WHERE owner_id = $1
+         ORDER BY id
+         LIMIT $2
+         OFFSET $3`,
+        [userId, limit, offset]
+    );
 
     return result.rows;
 }
@@ -139,39 +148,40 @@ export async function getProjectById(projectId) {
 }
 
 export async function createProject(projectData) {
-    const { title, description, owner_id } = projectData;
+    const { title, description, userId } = projectData;
 
     const result = await pool.query(
         `INSERT INTO projects (title, description, owner_id)
          VALUES ($1, $2, $3)
          RETURNING *`,
-        [title, description, owner_id]
+        [title, description, userId]
     );
 
     return result.rows[0];
 }
 
-export function updateProject(projectId, projectData){
+export async function updateProject(projectId, projectData) {
+    const { title, description } = projectData;
 
-  const project = getProjectById(projectId);
+    const result = await pool.query(
+        `UPDATE projects
+         SET title = $1,
+             description = $2
+         WHERE id = $3
+         RETURNING *`,
+        [title, description, projectId]
+    );
 
-  if (!project) {
-        return undefined;
-    }
-
-  Object.assign(project, projectData);
-
-  return project;
+    return result.rows[0];
 }
 
-export function deleteProject(projectId) {
-  const projectIndex = projects.findIndex((p) => p.id === projectId);
+export async function deleteProject(projectId) {
+    const result = await pool.query(
+        `DELETE FROM projects
+         WHERE id = $1
+         RETURNING *`,
+        [projectId]
+    );
 
-  if (projectIndex === -1) {
-    return undefined;
-  }
-
-  const deletedProject = projects.splice(projectIndex, 1);
-
-  return deletedProject;
+    return result.rows[0];
 }
