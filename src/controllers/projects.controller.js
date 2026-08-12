@@ -24,7 +24,7 @@ import { formatValidationErrors } from "../utils/validation.js";
 //    return sendSuccess(res, 200, projects);
 // };
 
-export const getAllProjects = async (req, res) => {
+export const getAllProjectsController = async (req, res) => {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 10;
     const userId = req.query.userId ? Number(req.query.userId) : undefined;
@@ -59,7 +59,13 @@ export const createProjectController = async (req, res) => {
 export const updateProjectController = async (req,res) => {
 
     const projectId = Number(req.params.projectId);
-    const updatedProject = await updateProject(projectId, req.body);
+    const result = createProjectSchema.safeParse(req.body);
+
+    if (!result.success) {
+        return sendError(res, 400, "VALIDATION_ERROR", "Invalid project data", formatValidationErrors(result.error.issues));
+    }
+
+    const updatedProject = await updateProject(projectId, result.data);
 
     if (!updatedProject) return sendError(res, 404, "Project not found");
 
