@@ -33,7 +33,7 @@ export const getUserByIdController = async (req, res) => {
     const user = await getUserById(userId);
 
     if (!user) {
-        return sendError(res, 404, "User not found");
+        return sendError(res, 404, "User not found", formatValidationErrors([{ path: ["userId"], message: "User with the specified ID does not exist" }]));
     }
     
     return sendSuccess(res, 200, user);
