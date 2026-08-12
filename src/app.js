@@ -31,7 +31,7 @@ app.get("/health", (req, res) => {
 app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/users", usersRoutes);
 app.use("/api/v1/projects/:projectId/members", projectMembersRoutes);
-app.use("/api/v1/projects/:projectId/members/:userId/tasks", tasksRoutes);
+app.use("/api/v1/projects/:projectId/tasks", tasksRoutes);
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {

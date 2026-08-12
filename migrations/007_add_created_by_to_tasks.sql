@@ -1,0 +1,2 @@
+ALTER TABLE tasks
+ADD COLUMN created_by INTEGER REFERENCES users(id);
