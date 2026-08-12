@@ -123,17 +123,32 @@ const projects = [
   },
 ];
 
-export async function getAllProjectsData(userId, page = 1, limit = 10) {
+export async function getAllProjectsData(
+    userId,
+    page = 1,
+    limit = 10
+) {
     const offset = (page - 1) * limit;
-const result = await pool.query(
-        `SELECT *
-         FROM projects
-         WHERE owner_id = $1
-         ORDER BY id
-         LIMIT $2
-         OFFSET $3`,
-        [userId, limit, offset]
-    );
+
+    let query = `
+        SELECT *
+        FROM projects
+    `;
+
+    const values = [];
+
+    if (userId) {
+        values.push(userId);
+        query += ` WHERE owner_id = $${values.length}`;
+    }
+
+    values.push(limit);
+    query += ` ORDER BY id LIMIT $${values.length}`;
+
+    values.push(offset);
+    query += ` OFFSET $${values.length}`;
+
+    const result = await pool.query(query, values);
 
     return result.rows;
 }
