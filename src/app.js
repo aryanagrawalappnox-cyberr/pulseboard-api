@@ -32,6 +32,7 @@ app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/users", usersRoutes);
 app.use("/api/v1/projects/:projectId/members", projectMembersRoutes);
 app.use("/api/v1/projects/:projectId/tasks", tasksRoutes);
+app.use("/api/v1/tasks", tasksRoutes);
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {
