@@ -9,7 +9,25 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({
-    storage
+    storage,
+    limits: {
+        fileSize: 5 * 1024 * 1024
+    },
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = [
+            "image/jpeg",
+            "image/png",
+            "application/pdf",
+            "application/msword",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        ];
+
+        if (!allowedTypes.includes(file.mimetype)) {
+            return cb(new Error("Unsupported file type"));
+        }
+
+        cb(null, true);
+    }
 });
 
 export default upload;

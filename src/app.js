@@ -1,5 +1,5 @@
 import express from "express";
-import { sendSuccess } from "./utils/response.js";
+import { sendSuccess, sendError } from "./utils/response.js";
 import projectRoutes from "./routes/projects.routes.js";
 import usersRoutes from "./routes/users.routes.js";
 import projectMembersRoutes from "./routes/projectMembers.routes.js";
@@ -39,6 +39,7 @@ app.use("/api/v1/tasks", tasksRoutes);
 app.use("/api/v1/tasks/:taskId/comments", commentsRoutes);
 app.use("/api/v1/comments", commentsRoutes);
 app.use("/api/v1/tasks/:taskId/attachments",attachmentsRouter);
+app.use("/api/v1/attachments", attachmentsRouter);  
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {
