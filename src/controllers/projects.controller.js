@@ -1,6 +1,6 @@
 import {getAllProjectsData, getProjectById, createProject, updateProject, deleteProject} from "../data/projects.data.js";
 import { sendError, sendSuccess } from "../utils/response.js";
-import { createProjectSchema } from "../schemas/project.schema.js";
+import { createProjectSchema, updateProjectSchema } from "../schemas/project.schema.js";
 import { formatValidationErrors } from "../utils/validation.js";
 
 // export const getAllProjects = (req, res) => {
@@ -59,7 +59,7 @@ export const createProjectController = async (req, res) => {
 export const updateProjectController = async (req,res) => {
 
     const projectId = Number(req.params.projectId);
-    const result = createProjectSchema.safeParse(req.body);
+    const result = updateProjectSchema.safeParse(req.body);
 
     if (!result.success) {
         return sendError(res, 400, "VALIDATION_ERROR", "Invalid project data", formatValidationErrors(result.error.issues));

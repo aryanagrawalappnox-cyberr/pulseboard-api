@@ -3,6 +3,7 @@ import projectRoutes from "./routes/projects.routes.js";
 import usersRoutes from "./routes/users.routes.js";
 import projectMembersRoutes from "./routes/projectMembers.routes.js";
 import tasksRoutes from "./routes/tasks.routes.js";
+import commentsRoutes from "./routes/comments.routes.js";
 
 const app = express();
 
@@ -33,6 +34,8 @@ app.use("/api/v1/users", usersRoutes);
 app.use("/api/v1/projects/:projectId/members", projectMembersRoutes);
 app.use("/api/v1/projects/:projectId/tasks", tasksRoutes);
 app.use("/api/v1/tasks", tasksRoutes);
+app.use("/api/v1/tasks/:taskId/comments", commentsRoutes);
+app.use("/api/v1/comments", commentsRoutes);
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {
