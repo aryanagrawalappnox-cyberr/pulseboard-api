@@ -1,51 +1,31 @@
 import pool from "../db.js";
+import prisma from "../prisma.js";
 
-export async function getAllProjectsData(userId,page = 1,limit = 10) {
+export async function getAllProjectsData(userId, page = 1, limit = 10) {
     const offset = (page - 1) * limit;
 
-    let query = `
-        SELECT *
-        FROM projects
-    `;
+    return await prisma.projects.findMany({
+        where: userId
+            ? {
+                owner_id: userId
+            }
+            : undefined,
 
-    const values = [];
+        orderBy: {
+            id: "asc"
+        },
 
-    if (userId) {
-        values.push(userId);
-        query += ` WHERE owner_id = $${values.length}`;
-    }
-
-    values.push(limit);
-    query += ` ORDER BY id LIMIT $${values.length}`;
-
-    values.push(offset);
-    query += ` OFFSET $${values.length}`;
-
-    const result = await pool.query(query, values);
-
-    return result.rows;
+        skip: offset,
+        take: limit
+    });
 }
 
 export async function getProjectById(projectId) {
-    const result = await pool.query(
-        "SELECT * FROM projects WHERE id = $1",
-        [projectId]
-    );
-
-    return result.rows[0];
-}
-
-export async function createProject(projectData) {
-    const { title, description, userId } = projectData;
-
-    const result = await pool.query(
-        `INSERT INTO projects (title, description, owner_id)
-         VALUES ($1, $2, $3)
-         RETURNING *`,
-        [title, description, userId]
-    );
-
-    return result.rows[0];
+    return await prisma.projects.findUnique({
+        where: {
+            id: projectId
+        }
+    });
 }
 
 export async function updateProject(projectId, projectData) {
@@ -72,4 +52,40 @@ export async function deleteProject(projectId) {
     );
 
     return result.rows[0];
+}
+
+export async function createProject(projectData) {
+    const { title, description, userId } = projectData;
+
+    const client = await pool.connect();
+
+    try {
+        await client.query("BEGIN");
+
+        const projectResult = await client.query(
+            `INSERT INTO projects (title, description, owner_id)
+             VALUES ($1, $2, $3)
+             RETURNING *`,
+            [title, description, userId]
+        );
+
+        const project = projectResult.rows[0];
+
+        await client.query(
+            `INSERT INTO project_members (user_id, project_id, role)
+             VALUES ($1, $2, $3)`,
+            [userId, project.id, "Admin"]
+        );
+
+        await client.query("COMMIT");
+
+        return project;
+
+    } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+
+    } finally {
+        client.release();
+    }
 }

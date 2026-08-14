@@ -22,3 +22,9 @@ build/
 
 coverage/
 
+
+.agents/
+.claude/
+.windsurf/
+skills-lock.json
+/src/generated/prisma
