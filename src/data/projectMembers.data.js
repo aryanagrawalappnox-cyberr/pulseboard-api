@@ -1,55 +1,75 @@
-import pool from "../db.js";
+import prisma from "../prisma.js";
+
+function isRecordNotFound(error) {
+    return error.code === "P2025";
+}
+
+function formatProjectMember(member) {
+    return {
+        id: member.users.id,
+        name: member.users.name,
+        email: member.users.email,
+        role: member.role
+    };
+}
 
 export async function getProjectMembers(projectId) {
-    const result = await pool.query(
-        `SELECT
-            u.id,
-            u.name,
-            u.email,
-            pm.role
-         FROM project_members pm
-         JOIN users u
-            ON pm.user_id = u.id
-         WHERE pm.project_id = $1
-         ORDER BY u.id`,
-        [projectId]
-    );
+    const members = await prisma.project_members.findMany({
+        where: {
+            project_id: projectId
+        },
+        include: {
+            users: true
+        },
+        orderBy: {
+            user_id: "asc"
+        }
+    });
 
-    return result.rows;
+    return members.map(formatProjectMember);
 }
 
 export async function addProjectMember(projectId, userId, role) {
-    const result = await pool.query(
-        `INSERT INTO project_members (project_id, user_id, role)
-         VALUES ($1, $2, $3)
-         RETURNING *`,
-        [projectId, userId, role]
-    );
-
-    return result.rows[0];
+    return await prisma.project_members.create({
+        data: {
+            project_id: projectId,
+            user_id: userId,
+            role
+        }
+    });
 }
 
 export async function updateProjectMember(projectId, userId, role) {
-    const result = await pool.query(
-        `UPDATE project_members
-         SET role = $1
-         WHERE project_id = $2
-           AND user_id = $3
-         RETURNING *`,
-        [role, projectId, userId]
-    );
-
-    return result.rows[0];
+    try {
+        return await prisma.project_members.update({
+            where: {
+                user_id_project_id: {
+                    user_id: userId,
+                    project_id: projectId
+                }
+            },
+            data: {
+                role
+            }
+        });
+    } catch (error) {
+        if (isRecordNotFound(error)) return undefined;
+        throw error;
+    }
 }
 
 export async function deleteProjectMember(projectId, userId) {
-    const result = await pool.query(
-        `DELETE FROM project_members
-         WHERE project_id = $1
-           AND user_id = $2
-         RETURNING *`,
-        [projectId, userId]
-    );
-
-    return result.rows[0];
+    try {
+        return await prisma.project_members.delete({
+            where: {
+                user_id_project_id: {
+                    user_id: userId,
+                    project_id: projectId
+                }
+            }
+        });
+    } catch (error) {
+        if (isRecordNotFound(error)) return undefined;
+        throw error;
+    }
 }

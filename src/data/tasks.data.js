@@ -1,84 +1,102 @@
-import pool from "../db.js";
+import prisma from "../prisma.js";
+
+function isRecordNotFound(error) {
+    return error.code === "P2025";
+}
+
+function formatTask(task) {
+    return {
+        id: task.id,
+        title: task.title,
+        description: task.description,
+        status: task.status,
+        project_id: task.project_id,
+        created_at: task.created_at,
+        created_by: task.users?.id ?? task.created_by,
+        created_by_name: task.users?.name,
+        created_by_email: task.users?.email
+    };
+}
 
 export async function getProjectTasks(projectId) {
-    const result = await pool.query(
-        `SELECT
-            t.id,
-            t.title,
-            t.description,
-            t.status,
-            t.project_id,
-            t.created_at,
-            u.id AS created_by,
-            u.name AS created_by_name,
-            u.email AS created_by_email
-         FROM tasks t
-         JOIN users u
-           ON t.created_by = u.id
-         WHERE t.project_id = $1
-         ORDER BY t.id`,
-        [projectId]
-    );
+    const tasks = await prisma.tasks.findMany({
+        where: {
+            project_id: projectId,
+            created_by: {
+                not: null
+            }
+        },
+        include: {
+            users: true
+        },
+        orderBy: {
+            id: "asc"
+        }
+    });
 
-    return result.rows;
+    return tasks.map(formatTask);
 }
 
 export async function getProjectTasksById(projectId, taskId) {
-    const result = await pool.query(
-        `SELECT
-            t.id,
-            t.title,
-            t.description,
-            t.status,
-            t.project_id,
-            t.created_at,
-            u.id AS created_by,
-            u.name AS created_by_name,
-            u.email AS created_by_email
-         FROM tasks t
-         JOIN users u
-           ON t.created_by = u.id
-         WHERE t.project_id = $1 AND t.id = $2`,
-        [projectId, taskId]
-    );
+    const task = await prisma.tasks.findFirst({
+        where: {
+            project_id: projectId,
+            id: taskId,
+            created_by: {
+                not: null
+            }
+        },
+        include: {
+            users: true
+        }
+    });
 
-    return result.rows[0];
+    return task ? formatTask(task) : undefined;
 }
 
 export async function createProjectTasks(projectId, taskData) {
      const { title, description, status, userId } = taskData;
 
-    const result = await pool.query(
-        `INSERT INTO tasks
-            (title, description, status, project_id, created_by)
-         VALUES ($1, $2, $3, $4, $5)
-         RETURNING *`,
-        [title, description, status, projectId, userId]
-    );
-
-    return result.rows[0];
+    return await prisma.tasks.create({
+        data: {
+            title,
+            description,
+            status,
+            project_id: projectId,
+            created_by: userId
+        }
+    });
 }
 
 export async function updateProjectTasks(taskId, taskData) {
     const { title, description, status } = taskData;    
 
-    const result = await pool.query(
-        `UPDATE tasks
-         SET title = $1, description = $2, status = $3
-         WHERE id = $4
-         RETURNING *`,
-        [title, description, status, taskId]
-    );  
-
-    return result.rows[0];
+    try {
+        return await prisma.tasks.update({
+            where: {
+                id: taskId
+            },
+            data: {
+                title,
+                description,
+                status
+            }
+        });
+    } catch (error) {
+        if (isRecordNotFound(error)) return undefined;
+        throw error;
+    }
 }
 
 export async function deleteProjectTasks(taskId) {
-    const result = await pool.query(
-        `DELETE FROM tasks
-         WHERE id = $1
-         RETURNING *`,
-        [taskId]
-    );
-    return result.rows[0];
+    try {
+        return await prisma.tasks.delete({
+            where: {
+                id: taskId
+            }
+        });
+    } catch (error) {
+        if (isRecordNotFound(error)) return undefined;
+        throw error;
+    }
 } 

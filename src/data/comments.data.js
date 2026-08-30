@@ -1,84 +1,97 @@
-import pool from "../db.js";
+import prisma from "../prisma.js";
+
+function isRecordNotFound(error) {
+    return error.code === "P2025";
+}
+
+function formatComment(comment) {
+    return {
+        id: comment.id,
+        content: comment.content,
+        task_id: comment.task_id,
+        created_at: comment.created_at,
+        created_by: comment.users?.id ?? comment.created_by,
+        created_by_name: comment.users?.name,
+        created_by_email: comment.users?.email
+    };
+}
 
 export const getAllComments = async (taskId) => { 
 
-    const result = await pool.query(
-        `SELECT
-            c.id,
-            c.content,
-            c.task_id,  
-            c.created_at,
-            u.id AS created_by,
-            u.name AS created_by_name,
-            u.email AS created_by_email
-          FROM comments c
-          JOIN users u
-            ON c.created_by = u.id
-          WHERE c.task_id = $1
-          ORDER BY c.id`,
-        [taskId]
-    );  
-    return result.rows;
+    const comments = await prisma.comments.findMany({
+        where: {
+            task_id: taskId,
+            created_by: {
+                not: null
+            }
+        },
+        include: {
+            users: true
+        },
+        orderBy: {
+            id: "asc"
+        }
+    });
+
+    return comments.map(formatComment);
 };
 
 export const getCommentById = async (taskId, commentId) => {
-    const result = await pool.query(
-        `SELECT 
-            c.id,
-            c.content,
-            c.task_id,
-            c.created_at,
-            u.id AS created_by,
-            u.name AS created_by_name,
-            u.email AS created_by_email
-         FROM comments c
-         JOIN users u 
-            ON c.created_by = u.id  
-        WHERE c.task_id = $1 AND c.id = $2`,
-        [taskId, commentId]
-    );    
+    const comment = await prisma.comments.findFirst({
+        where: {
+            task_id: taskId,
+            id: commentId,
+            created_by: {
+                not: null
+            }
+        },
+        include: {
+            users: true
+        }
+    });
 
-    return result.rows[0];
+    return comment ? formatComment(comment) : undefined;
 };
 
 export const createComment = async (taskId, commentData) => {
     const { content, userId } = commentData;
 
-    const result = await pool.query(  
-
-        `INSERT INTO comments
-            (content, task_id, created_by)
-         VALUES ($1, $2, $3)
-         RETURNING *`,
-        [content, taskId, userId]
-    );    
-
-    return result.rows[0];
+    return await prisma.comments.create({
+        data: {
+            content,
+            task_id: taskId,
+            created_by: userId
+        }
+    });
 };
 
 export const updateComment = async (commentId, commentData) => {
     const { content } = commentData;
 
-    const result = await pool.query(
-        `UPDATE comments
-          SET content = $1
-          WHERE id = $2
-          RETURNING *`,
-        [content, commentId]
-    );
-
-
-    return result.rows[0];
+    try {
+        return await prisma.comments.update({
+            where: {
+                id: commentId
+            },
+            data: {
+                content
+            }
+        });
+    } catch (error) {
+        if (isRecordNotFound(error)) return undefined;
+        throw error;
+    }
 };
 
 export const deleteComment = async (commentId) => {
-    const result = await pool.query(
-        `DELETE FROM comments
-         WHERE id = $1
-         RETURNING *`,
-        [commentId]
-    );
-
-    return result.rows[0];
+    try {
+        return await prisma.comments.delete({
+            where: {
+                id: commentId
+            }
+        });
+    } catch (error) {
+        if (isRecordNotFound(error)) return undefined;
+        throw error;
+    }
 };
-

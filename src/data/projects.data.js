@@ -1,5 +1,8 @@
-import pool from "../db.js";
 import prisma from "../prisma.js";
+
+function isRecordNotFound(error) {
+    return error.code === "P2025";
+}
 
 export async function getAllProjectsData(userId, page = 1, limit = 10) {
     const offset = (page - 1) * limit;
@@ -31,61 +34,61 @@ export async function getProjectById(projectId) {
 export async function updateProject(projectId, projectData) {
     const { title, description } = projectData;
 
-    const result = await pool.query(
-        `UPDATE projects
-         SET title = $1,
-             description = $2
-         WHERE id = $3
-         RETURNING *`,
-        [title, description, projectId]
-    );
-
-    return result.rows[0];
+    try {
+        return await prisma.projects.update({
+            where: {
+                id: projectId
+            },
+            data: {
+                title,
+                description
+            }
+        });
+    } catch (error) {
+        if (isRecordNotFound(error)) return undefined;
+        throw error;
+    }
 }
 
 export async function deleteProject(projectId) {
-    const result = await pool.query(
-        `DELETE FROM projects
-         WHERE id = $1
-         RETURNING *`,
-        [projectId]
-    );
-
-    return result.rows[0];
+    try {
+        return await prisma.projects.delete({
+            where: {
+                id: projectId
+            }
+        });
+    } catch (error) {
+        if (isRecordNotFound(error)) return undefined;
+        throw error;
+    }
 }
 
 export async function createProject(projectData) {
     const { title, description, userId } = projectData;
 
-    const client = await pool.connect();
+    const project = await prisma.$transaction(async (tx) => {
 
-    try {
-        await client.query("BEGIN");
+        // 1. Create project
+        const newProject = await tx.projects.create({
+            data: {
+                title,
+                description,
+                owner_id: userId
+            }
+        });
 
-        const projectResult = await client.query(
-            `INSERT INTO projects (title, description, owner_id)
-             VALUES ($1, $2, $3)
-             RETURNING *`,
-            [title, description, userId]
-        );
+        // 2. Add owner as project member
+        await tx.project_members.create({
+            data: {
+                user_id: userId,
+                project_id: newProject.id,
+                role: "Admin"
+            }
+        });
 
-        const project = projectResult.rows[0];
+        // 3. Both operations succeeded
+        return newProject;
+    });
 
-        await client.query(
-            `INSERT INTO project_members (user_id, project_id, role)
-             VALUES ($1, $2, $3)`,
-            [userId, project.id, "Admin"]
-        );
-
-        await client.query("COMMIT");
-
-        return project;
-
-    } catch (error) {
-        await client.query("ROLLBACK");
-        throw error;
-
-    } finally {
-        client.release();
-    }
+    return project;
 }
