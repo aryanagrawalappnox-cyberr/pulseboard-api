@@ -1,18 +1,9 @@
-import { createUser, getAllUsers, getUserById, updateUser, deleteUser } from "../data/users.data.js";
+import { getAllUsers, getUserById, updateUser, deleteUser } from "../data/users.data.js";
 import { sendError, sendSuccess } from "../utils/response.js";
 import { createUserSchema, updateUserSchema} from "../schemas/user.schema.js";
 import { formatValidationErrors } from "../utils/validation.js";
 
-export const createUserController = async (req, res) => {
-    const result = createUserSchema.safeParse(req.body);
 
-    if (!result.success) {
-        return sendError(res, 400, "VALIDATION_ERROR", "Invalid user data", formatValidationErrors(result.error.issues));
-    }
-    const user = await createUser(result.data);
-
-    return sendSuccess(res, 201, user);
-};
 
 export const getAllUsersController = async (req, res) => {
     const page = Number(req.query.page) || 1;

@@ -1,0 +1,20 @@
+import { sendError } from "../utils/response.js";
+
+export const userOwnershipMiddleware = async (req, res, next) => {
+    const userId = req.user.id;
+    const resourceId = Number(req.params.userId);
+
+    console.log("JWT user:", userId);
+    console.log("URL user:", resourceId);
+
+    if (userId !== resourceId) {
+        return sendError(
+            res,
+            403,
+            "FORBIDDEN",
+            "You do not have permission to modify this user"
+        );
+    }
+
+    next();
+};

@@ -1,12 +1,14 @@
 import express from "express";
 import {getAllProjectsController,getProjectByIdController, createProjectController, updateProjectController, deleteProjectController} from "../controllers/projects.controller.js";
+import { authMiddleware} from "../middleware/auth.middleware.js";
+import {projectRoleMiddleware} from "../middleware/projectRole.middleware.js";
 
 const router = express.Router();
 
-router.get("/", getAllProjectsController);
-router.get("/:projectId", getProjectByIdController);
-router.post("/", createProjectController);
-router.put("/:projectId", updateProjectController);
-router.delete("/:projectId", deleteProjectController);
+router.get("/", authMiddleware, getAllProjectsController);
+router.get("/:projectId", authMiddleware,  projectRoleMiddleware(["Admin", "Member"]), getProjectByIdController);
+router.post("/", authMiddleware, createProjectController);
+router.put("/:projectId", authMiddleware,  projectRoleMiddleware("Admin"),updateProjectController);
+router.delete("/:projectId", authMiddleware, projectRoleMiddleware("Admin"), deleteProjectController);
 
 export default router;

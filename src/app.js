@@ -6,6 +6,7 @@ import projectMembersRoutes from "./routes/projectMembers.routes.js";
 import tasksRoutes from "./routes/tasks.routes.js";
 import commentsRoutes from "./routes/comments.routes.js";
 import attachmentsRouter from "./routes/attachments.routes.js";
+import authRoutes from "./routes/auth.routes.js";
 
 const app = express();
 
@@ -31,6 +32,8 @@ app.get("/health", (req, res) => {
 });
 
 // Project Routes
+app.use("/api/v1/auth", authRoutes);
+
 app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/users", usersRoutes);
 app.use("/api/v1/projects/:projectId/members", projectMembersRoutes);

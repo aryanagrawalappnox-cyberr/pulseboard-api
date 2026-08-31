@@ -1,18 +1,55 @@
 import prisma from "../prisma.js";
+import bcrypt from "bcrypt";
 
 function isRecordNotFound(error) {
     return error.code === "P2025";
 }
 
-export async function createUser(userData) {
-    const { name, email } = userData;
+export async function createAuthUser(userData) {
+    const { name, email, password } = userData;
+
+    const passwordHash = await bcrypt.hash(password, 10);
 
     return await prisma.users.create({
         data: {
             name,
+            email,
+            password_hash: passwordHash
+        },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            created_at: true
+        }
+    });
+}
+
+export async function authenticateUser(email, password) {
+    const user = await prisma.users.findUnique({
+        where: {
             email
         }
     });
+
+    if (!user || !user.password_hash) {
+        return null;
+    }
+
+    const passwordMatches = await bcrypt.compare(
+        password,
+        user.password_hash
+    );
+
+    if (!passwordMatches) {
+        return null;
+    }
+
+    return {
+        id: user.id,
+        name: user.name,
+        email: user.email
+    };
 }
 
 export async function getAllUsers(page = 1, limit = 10) {
