@@ -1,7 +1,7 @@
 import express from "express";
 import { getCommentsController, getCommentByIdController, createCommentController, updateCommentController, deleteCommentController } from "../controllers/comments.controller.js";
 import { authMiddleware } from "../middleware/auth.middleware.js";
-import { projectRoleMiddleware } from "../middleware/projectRole.middleware.js";
+import { taskAccessMiddleware } from "../middleware/taskAccess.middleware.js";
 
 const router = express.Router({ mergeParams: true });
 

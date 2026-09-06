@@ -6,7 +6,7 @@ import { userOwnershipMiddleware } from "../middleware/user.middleware.js";
 const router = express.Router();
 
 router.get("/", authMiddleware, getAllUsersController);
-router.get("/:userId", authMiddleware, getUserByIdController);
+router.get("/:userId", authMiddleware, userOwnershipMiddleware, getUserByIdController);
 router.put("/:userId", authMiddleware, userOwnershipMiddleware, updateUserController);
 router.delete("/:userId", authMiddleware, userOwnershipMiddleware, deleteUserController);
 

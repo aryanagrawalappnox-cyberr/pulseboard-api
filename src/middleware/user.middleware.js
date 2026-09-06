@@ -12,7 +12,7 @@ export const userOwnershipMiddleware = async (req, res, next) => {
             res,
             403,
             "FORBIDDEN",
-            "You do not have permission to modify this user"
+            "You do not have permission to access or modify this user"
         );
     }
 

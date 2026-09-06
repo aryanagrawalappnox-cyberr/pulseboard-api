@@ -1,4 +1,7 @@
 import express from "express";
+import helmet from "helmet";
+import cors from "cors";
+import rateLimit from "express-rate-limit";
 import { sendSuccess, sendError } from "./utils/response.js";
 import projectRoutes from "./routes/projects.routes.js";
 import usersRoutes from "./routes/users.routes.js";
@@ -7,10 +10,18 @@ import tasksRoutes from "./routes/tasks.routes.js";
 import commentsRoutes from "./routes/comments.routes.js";
 import attachmentsRouter from "./routes/attachments.routes.js";
 import authRoutes from "./routes/auth.routes.js";
-import helmet from "helmet";
+
 
 const app = express();
 app.use(helmet());
+app.use(cors());
+
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 100,
+    standardHeaders: "draft-8",
+    legacyHeaders: false
+});
 
 // Request Logging Middleware
 app.use((req, res, next) => {
@@ -22,6 +33,8 @@ app.use((req, res, next) => {
 
   next();
 });
+
+app.use("/api/", apiLimiter);
 
 // JSON Body Parser Middleware
 app.use(express.json());
