@@ -1,9 +1,5 @@
 import prisma from "../prisma.js";
 
-function isRecordNotFound(error) {
-    return error.code === "P2025";
-}
-
 function formatComment(comment) {
     return {
         id: comment.id,
@@ -16,8 +12,7 @@ function formatComment(comment) {
     };
 }
 
-export const getAllComments = async (taskId) => { 
-
+export const getAllComments = async (taskId) => {
     const comments = await prisma.comments.findMany({
         where: {
             task_id: taskId,
@@ -26,7 +21,13 @@ export const getAllComments = async (taskId) => {
             }
         },
         include: {
-            users: true
+            users: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true
+                }
+            }
         },
         orderBy: {
             id: "asc"
@@ -46,15 +47,21 @@ export const getCommentById = async (taskId, commentId) => {
             }
         },
         include: {
-            users: true
+            users: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true
+                }
+            }
         }
     });
 
     return comment ? formatComment(comment) : undefined;
 };
 
-export const createComment = async (taskId, commentData) => {
-    const { content, userId } = commentData;
+export const createComment = async (taskId, commentData, userId) => {
+    const { content } = commentData;
 
     return await prisma.comments.create({
         data: {
@@ -65,33 +72,45 @@ export const createComment = async (taskId, commentData) => {
     });
 };
 
-export const updateComment = async (commentId, commentData) => {
+export const updateComment = async (taskId, commentId, commentData) => {
     const { content } = commentData;
 
-    try {
-        return await prisma.comments.update({
-            where: {
-                id: commentId
-            },
-            data: {
-                content
-            }
-        });
-    } catch (error) {
-        if (isRecordNotFound(error)) return undefined;
-        throw error;
+    const comment = await prisma.comments.findFirst({
+        where: {
+            id: commentId,
+            task_id: taskId
+        }
+    });
+
+    if (!comment) {
+        return undefined;
     }
+
+    return await prisma.comments.update({
+        where: {
+            id: commentId
+        },
+        data: {
+            content
+        }
+    });
 };
 
-export const deleteComment = async (commentId) => {
-    try {
-        return await prisma.comments.delete({
-            where: {
-                id: commentId
-            }
-        });
-    } catch (error) {
-        if (isRecordNotFound(error)) return undefined;
-        throw error;
+export const deleteComment = async (taskId, commentId) => {
+    const comment = await prisma.comments.findFirst({
+        where: {
+            id: commentId,
+            task_id: taskId
+        }
+    });
+
+    if (!comment) {
+        return undefined;
     }
+
+    return await prisma.comments.delete({
+        where: {
+            id: commentId
+        }
+    });
 };

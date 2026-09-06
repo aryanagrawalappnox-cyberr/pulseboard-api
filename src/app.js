@@ -7,8 +7,10 @@ import tasksRoutes from "./routes/tasks.routes.js";
 import commentsRoutes from "./routes/comments.routes.js";
 import attachmentsRouter from "./routes/attachments.routes.js";
 import authRoutes from "./routes/auth.routes.js";
+import helmet from "helmet";
 
 const app = express();
+app.use(helmet());
 
 // Request Logging Middleware
 app.use((req, res, next) => {
@@ -38,11 +40,13 @@ app.use("/api/v1/projects", projectRoutes);
 app.use("/api/v1/users", usersRoutes);
 app.use("/api/v1/projects/:projectId/members", projectMembersRoutes);
 app.use("/api/v1/projects/:projectId/tasks", tasksRoutes);
-app.use("/api/v1/tasks", tasksRoutes);
+// app.use("/api/v1/tasks", tasksRoutes);
+
 app.use("/api/v1/tasks/:taskId/comments", commentsRoutes);
-app.use("/api/v1/comments", commentsRoutes);
-app.use("/api/v1/tasks/:taskId/attachments",attachmentsRouter);
-app.use("/api/v1/attachments", attachmentsRouter);  
+// app.use("/api/v1/comments", commentsRoutes);
+
+app.use("/api/v1/tasks/:taskId/attachments", attachmentsRouter);
+// app.use("/api/v1/attachments", attachmentsRouter);
 
 // Error Handling Middleware
 app.use((err, req, res, next) => {

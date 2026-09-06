@@ -4,7 +4,7 @@ CREATE TABLE project_members (
     project_id INTEGER NOT NULL,
 
     role VARCHAR(20) NOT NULL
-        CHECK (role IN ('Owner', 'Admin', 'Member')),
+        CHECK (role IN ('Admin', 'Member')),
 
     PRIMARY KEY (user_id, project_id),
 

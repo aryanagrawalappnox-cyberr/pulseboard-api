@@ -25,15 +25,27 @@ export async function getAttachments(taskId) {
     });
 }
 
-export async function getAttachmentById(attachmentId) {
-    return await prisma.attachments.findUnique({
+export async function getAttachmentById(taskId, attachmentId) {
+    return await prisma.attachments.findFirst({
         where: {
-            id: attachmentId
+            id: attachmentId,
+            task_id: taskId
         }
     });
 }
 
-export async function deleteAttachment(attachmentId) {
+export async function deleteAttachment(taskId, attachmentId) {
+    const attachment = await prisma.attachments.findFirst({
+        where: {
+            id: attachmentId,
+            task_id: taskId
+        }
+    });
+
+    if (!attachment) {
+        return undefined;
+    }
+
     try {
         return await prisma.attachments.delete({
             where: {

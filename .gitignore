@@ -28,3 +28,5 @@ coverage/
 .windsurf/
 skills-lock.json
 /src/generated/prisma
+
+future_scope.md

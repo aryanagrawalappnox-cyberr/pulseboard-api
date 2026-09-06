@@ -3,31 +3,10 @@ import { sendError, sendSuccess } from "../utils/response.js";
 import { createProjectSchema, updateProjectSchema } from "../schemas/project.schema.js";
 import { formatValidationErrors } from "../utils/validation.js";
 
-// export const getAllProjects = (req, res) => {
-
-//   const pageNumber = Number(req.query.page) || 1;
-//   const limitNumber = Number(req.query.limit) || 10;
-//   const userId = Number(req.query.userId);
-//   const sort = req.query.sort;
-
-//   let projects = getAllProjectsData();
-
-//   if(userId !== undefined) projects = projects.filter(project => project.userId === userId);
-
-//   if(sort == "title") projects = projects.sort((a, b) => a.title.localeCompare(b.title));
-
-//   const startIndex = (pageNumber - 1) * limitNumber;
-//   const endIndex = startIndex + limitNumber;
-
-//    projects = projects.slice(startIndex, endIndex);
-
-//    return sendSuccess(res, 200, projects);
-// };
-
 export const getAllProjectsController = async (req, res) => {
     const page = Number(req.query.page) || 1;
     const limit = Number(req.query.limit) || 15;
-    const userId = req.query.userId ? Number(req.query.userId) : undefined;
+    const userId = req.user.id;
 
     const projects = await getAllProjectsData(userId, page, limit);
 
@@ -51,7 +30,10 @@ export const createProjectController = async (req, res) => {
 
   if (!result.success) return sendError(res, 400,  "VALIDATION_ERROR","Invalid project data", formatValidationErrors(result.error.issues));
 
-  const newProject = await createProject(result.data);
+  const newProject = await createProject({
+    ...result.data,
+    userId: req.user.id
+  });
 
   return sendSuccess(res, 201, newProject);
 };

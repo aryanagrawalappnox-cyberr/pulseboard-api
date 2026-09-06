@@ -32,11 +32,30 @@ export const addProjectMemberController = async (req, res) => {
     }
     const { userId, role } = result.data;
 
+    if (!Number.isInteger(userId) || userId <= 0) {
+    return sendError(
+        res,
+        400,
+        "VALIDATION_ERROR",
+        "Invalid user ID",
+        []
+    );
+}
+
     const member = await addProjectMember(
         projectId,
         userId,
         role
     );
+
+    if (!member) {
+    return sendError(
+        res,
+        409,
+        "ALREADY_MEMBER",
+        "User is already a member of this project"
+    );
+}
 
     return sendSuccess(res, 201, member);
 };
@@ -44,6 +63,21 @@ export const addProjectMemberController = async (req, res) => {
 export const updateProjectMemberController = async (req, res) => {
     const projectId = Number(req.params.projectId);
     const userId = Number(req.params.userId);
+
+    if (
+    !Number.isInteger(projectId) ||
+    projectId <= 0 ||
+    !Number.isInteger(userId) ||
+    userId <= 0
+) {
+    return sendError(
+        res,
+        400,
+        "VALIDATION_ERROR",
+        "Invalid project or user ID",
+        []
+    );
+}
 
     const result = updateProjectMemberSchema.safeParse(req.body);
 
@@ -73,6 +107,21 @@ export const updateProjectMemberController = async (req, res) => {
 export const deleteProjectMemberController = async (req, res) => {
     const projectId = Number(req.params.projectId);
     const userId = Number(req.params.userId);
+
+    if (
+    !Number.isInteger(projectId) ||
+    projectId <= 0 ||
+    !Number.isInteger(userId) ||
+    userId <= 0
+) {
+    return sendError(
+        res,
+        400,
+        "VALIDATION_ERROR",
+        "Invalid project or user ID",
+        []
+    );
+}
 
     const deletedMember = await deleteProjectMember(
         projectId,

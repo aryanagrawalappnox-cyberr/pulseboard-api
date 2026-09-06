@@ -1,102 +1,123 @@
 import prisma from "../prisma.js";
 
-function isRecordNotFound(error) {
-    return error.code === "P2025";
-}
-
 function formatTask(task) {
-    return {
-        id: task.id,
-        title: task.title,
-        description: task.description,
-        status: task.status,
-        project_id: task.project_id,
-        created_at: task.created_at,
-        created_by: task.users?.id ?? task.created_by,
-        created_by_name: task.users?.name,
-        created_by_email: task.users?.email
-    };
+  return {
+    id: task.id,
+    title: task.title,
+    description: task.description,
+    status: task.status,
+    project_id: task.project_id,
+    created_at: task.created_at,
+    created_by: task.users?.id ?? task.created_by,
+    created_by_name: task.users?.name,
+    created_by_email: task.users?.email,
+  };
 }
 
 export async function getProjectTasks(projectId) {
-    const tasks = await prisma.tasks.findMany({
-        where: {
-            project_id: projectId,
-            created_by: {
-                not: null
-            }
+  const tasks = await prisma.tasks.findMany({
+    where: {
+      project_id: projectId,
+      created_by: {
+        not: null,
+      },
+    },
+    include: {
+      users: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
         },
-        include: {
-            users: true
-        },
-        orderBy: {
-            id: "asc"
-        }
-    });
+      },
+    },
+    orderBy: {
+      id: "asc",
+    },
+  });
 
-    return tasks.map(formatTask);
+  return tasks.map(formatTask);
 }
 
 export async function getProjectTasksById(projectId, taskId) {
+  const task = await prisma.tasks.findFirst({
+    where: {
+      project_id: projectId,
+      id: taskId,
+      created_by: {
+        not: null,
+      },
+    },
+    include: {
+      users: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  return task ? formatTask(task) : undefined;
+}
+
+export async function createProjectTasks(projectId, taskData, userId) {
+  const { title, description, status } = taskData;
+
+  return await prisma.tasks.create({
+    data: {
+      title,
+      description,
+      status,
+      project_id: projectId,
+      created_by: userId,
+    },
+  });
+}
+
+export async function updateProjectTasks(projectId, taskId, taskData) {
+    const { title, description, status } = taskData;
+
     const task = await prisma.tasks.findFirst({
         where: {
-            project_id: projectId,
             id: taskId,
-            created_by: {
-                not: null
-            }
-        },
-        include: {
-            users: true
+            project_id: projectId
         }
     });
 
-    return task ? formatTask(task) : undefined;
-}
+    if (!task) {
+        return undefined;
+    }
 
-export async function createProjectTasks(projectId, taskData) {
-     const { title, description, status, userId } = taskData;
-
-    return await prisma.tasks.create({
+    return await prisma.tasks.update({
+        where: {
+            id: taskId
+        },
         data: {
             title,
             description,
-            status,
-            project_id: projectId,
-            created_by: userId
+            status
         }
     });
 }
 
-export async function updateProjectTasks(taskId, taskData) {
-    const { title, description, status } = taskData;    
+export async function deleteProjectTasks(projectId, taskId) {
 
-    try {
-        return await prisma.tasks.update({
-            where: {
-                id: taskId
-            },
-            data: {
-                title,
-                description,
-                status
-            }
-        });
-    } catch (error) {
-        if (isRecordNotFound(error)) return undefined;
-        throw error;
+    const task = await prisma.tasks.findFirst({
+        where: {
+            id: taskId,
+            project_id: projectId
+        }
+    });
+
+    if (!task) {
+        return undefined;
     }
+
+    return await prisma.tasks.delete({
+        where: {
+            id: taskId
+        }
+    });
 }
-
-export async function deleteProjectTasks(taskId) {
-    try {
-        return await prisma.tasks.delete({
-            where: {
-                id: taskId
-            }
-        });
-    } catch (error) {
-        if (isRecordNotFound(error)) return undefined;
-        throw error;
-    }
-} 

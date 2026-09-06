@@ -6,6 +6,16 @@ import { getProjectTasks, getProjectTasksById, createProjectTasks, updateProject
 export const getProjectTasksController = async (req, res) => {
     const projectId = Number(req.params.projectId);
 
+    if (!Number.isInteger(projectId) || projectId <= 0) {
+        return sendError(
+            res,
+            400,
+            "VALIDATION_ERROR",
+            "Invalid project ID",
+            []
+        );
+    }
+
     const tasks = await getProjectTasks(projectId);
 
     return sendSuccess(res, 200, tasks);
@@ -14,6 +24,21 @@ export const getProjectTasksController = async (req, res) => {
 export const getProjectTasksByIdController = async (req, res) => {
     const projectId = Number(req.params.projectId);
     const taskId = Number(req.params.taskId);
+
+    if (
+        !Number.isInteger(projectId) ||
+        projectId <= 0 ||
+        !Number.isInteger(taskId) ||
+        taskId <= 0
+    ) {
+        return sendError(
+            res,
+            400,
+            "VALIDATION_ERROR",
+            "Invalid project or task ID",
+            []
+        );
+    }
 
     const tasks = await getProjectTasksById(projectId, taskId);
 
@@ -27,6 +52,16 @@ export const getProjectTasksByIdController = async (req, res) => {
 export const createProjectTaskController = async (req, res) => {
     const projectId = Number(req.params.projectId);
 
+    if (!Number.isInteger(projectId) || projectId <= 0) {
+        return sendError(
+            res,
+            400,
+            "VALIDATION_ERROR",
+            "Invalid project ID",
+            []
+        );
+    }
+
     const result = createTaskSchema.safeParse(req.body);
 
     if (!result.success) {
@@ -39,13 +74,28 @@ export const createProjectTaskController = async (req, res) => {
         );
     }
 
-    const task = await createProjectTasks(projectId, result.data);
+    const task = await createProjectTasks(projectId, result.data, req.user.id);
 
     return sendSuccess(res, 201, task);
 };
 
 export const updateProjectTaskController = async (req, res) => {
     const taskId = Number(req.params.taskId);
+
+    if (
+        !Number.isInteger(projectId) ||
+        projectId <= 0 ||
+        !Number.isInteger(taskId) ||
+        taskId <= 0
+    ) {
+        return sendError(
+            res,
+            400,
+            "VALIDATION_ERROR",
+            "Invalid project or task ID",
+            []
+        );
+    }
 
     const result = updateTaskSchema.safeParse(req.body);
 
@@ -59,15 +109,34 @@ export const updateProjectTaskController = async (req, res) => {
         );
     }
 
-    const updatedTask = await updateProjectTasks(taskId, result.data);   
+    const updatedTask = await updateProjectTasks(taskId, result.data, result.data);  
+    
+    if (!updatedTask) {
+        return sendError(res, 404, "Task not found");
+    }
 
     return sendSuccess(res, 200, updatedTask);  
 };
 
 export const deleteProjectTaskController = async (req, res) => {
-    const taskId = Number(req.params.taskId);       
+    const taskId = Number(req.params.taskId);  
+    
+    if (
+        !Number.isInteger(projectId) ||
+        projectId <= 0 ||
+        !Number.isInteger(taskId) ||
+        taskId <= 0
+    ) {
+        return sendError(
+            res,
+            400,
+            "VALIDATION_ERROR",
+            "Invalid project or task ID",
+            []
+        );
+    }
 
-    const deletedTask = await deleteProjectTasks(taskId);
+    const deletedTask = await deleteProjectTasks(projectId, taskId);
 
     if (!deletedTask) {
         return sendError(res, 404, "Task not found", formatValidationErrors([{ path: ["taskId"], message: "Task with the specified ID does not exist" }]));

@@ -6,26 +6,72 @@ import { getAllComments, getCommentById, createComment, updateComment, deleteCom
 export const getCommentsController = async (req, res) => {
     const taskId = Number(req.params.taskId);
 
+    if (!Number.isInteger(taskId) ||
+        taskId <= 0
+    ) {
+        return sendError(
+            res,
+            400,
+            "VALIDATION_ERROR",
+            "Invalid project or task ID",
+            []
+        );
+    }
+
     const comments = await getAllComments(taskId);
 
     return sendSuccess(res, 200, comments);
-}
+};
 
 export const getCommentByIdController = async (req, res) => {
     const taskId = Number(req.params.taskId);
-    const commentId = Number(req.params.commentId); 
+    const commentId = Number(req.params.commentId);
+
+    if (!Number.isInteger(taskId) ||
+        taskId <= 0 ||
+        !Number.isInteger(commentId) ||
+        commentId <= 0
+    ) {
+        return sendError(
+            res,
+            400,
+            "VALIDATION_ERROR",
+            "Invalid project, task, or comment ID",
+            []
+        );
+    }
 
     const comment = await getCommentById(taskId, commentId);
 
     if (!comment) {
-        return sendError(res, 404, "Comment not found", formatValidationErrors([{ path: ["commentId"], message: "Comment with the specified ID does not exist" }]));
+        return sendError(
+            res,
+            404,
+            "Comment not found",
+            formatValidationErrors([
+                {
+                    path: ["commentId"],
+                    message: "Comment with the specified ID does not exist"
+                }
+            ])
+        );
     }
 
     return sendSuccess(res, 200, comment);
-}
+};
 
 export const createCommentController = async (req, res) => {
     const taskId = Number(req.params.taskId);
+
+    if (!Number.isInteger(taskId) || taskId <= 0) {
+        return sendError(
+            res,
+            400,
+            "VALIDATION_ERROR",
+            "Invalid task ID",
+            []
+        );
+    }
 
     const result = createCommentSchema.safeParse(req.body);
 
@@ -34,7 +80,7 @@ export const createCommentController = async (req, res) => {
         return sendError(res, 400, "VALIDATION_ERROR", "Invalid comment data", formatValidationErrors(result.error.issues));
     }
 
-    const comment = await createComment(taskId, result.data);
+    const comment = await createComment(taskId, result.data, req.user.id);
 
     return sendSuccess(res, 201, comment);
 }
@@ -42,6 +88,21 @@ export const createCommentController = async (req, res) => {
 
 export const updateCommentController = async (req, res) => {
     const commentId = Number(req.params.commentId);
+    const taskId = Number(req.params.taskId);
+
+     if (!Number.isInteger(taskId) ||
+        taskId <= 0 ||
+        !Number.isInteger(commentId) ||
+        commentId <= 0
+    ) {
+        return sendError(
+            res,
+            400,
+            "VALIDATION_ERROR",
+            "Invalid task or comment ID",
+            []
+        );
+    }
 
     const result = updateCommentSchema.safeParse(req.body);
 
@@ -49,7 +110,7 @@ export const updateCommentController = async (req, res) => {
         return sendError(res, 400, "VALIDATION_ERROR", "Invalid comment data", formatValidationErrors(result.error.issues));
     }
 
-    const updatedComment = await updateComment(commentId, result.data);
+    const updatedComment = await updateComment(taskId, commentId, result.data);
 
     if (!updatedComment) {
         return sendError(res, 404, "Comment not found");
@@ -60,8 +121,23 @@ export const updateCommentController = async (req, res) => {
 
 export const deleteCommentController = async (req, res) => {
     const commentId = Number(req.params.commentId);
+    const taskId = Number(req.params.taskId);
 
-    const deletedComment = await deleteComment(commentId);
+    if (!Number.isInteger(taskId) ||
+        taskId <= 0 ||
+        !Number.isInteger(commentId) ||
+        commentId <= 0
+    ) {
+        return sendError(
+            res,
+            400,
+            "VALIDATION_ERROR",
+            "Invalid task or comment ID",
+            []
+        );
+    }
+
+    const deletedComment = await deleteComment(taskId,commentId);
 
     if (!deletedComment) {
         return sendError(res, 404, "Comment not found");

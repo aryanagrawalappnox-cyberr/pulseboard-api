@@ -8,11 +8,13 @@ export async function getAllProjectsData(userId, page = 1, limit = 10) {
     const offset = (page - 1) * limit;
 
     return await prisma.projects.findMany({
-        where: userId
-            ? {
-                owner_id: userId
+        where: {
+            project_members: {
+                some: {
+                    user_id: userId
+                }
             }
-            : undefined,
+        },
 
         orderBy: {
             id: "asc"
