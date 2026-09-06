@@ -56,6 +56,12 @@ export async function getAllUsers(page = 1, limit = 10) {
     const offset = (page - 1) * limit;
 
     return await prisma.users.findMany({
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            created_at: true
+        },
         orderBy: {
             id: "asc"
         },
@@ -68,6 +74,12 @@ export async function getUserById(userId) {
     return await prisma.users.findUnique({
         where: {
             id: userId
+        },
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            created_at: true
         }
     });
 }
@@ -83,6 +95,12 @@ export async function updateUser(userId, userData) {
             data: {
                 name,
                 email
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                created_at: true
             }
         });
     } catch (error) {

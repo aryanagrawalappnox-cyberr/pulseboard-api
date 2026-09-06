@@ -1,6 +1,7 @@
 import express from "express";
 import helmet from "helmet";
 import cors from "cors";
+import multer from "multer";
 import rateLimit from "express-rate-limit";
 import { sendSuccess, sendError } from "./utils/response.js";
 import projectRoutes from "./routes/projects.routes.js";
@@ -14,11 +15,16 @@ import authRoutes from "./routes/auth.routes.js";
 
 const app = express();
 app.use(helmet());
-app.use(cors());
+
+// The web client sends the JWT in an Authorization header, so credentials are not needed.
+app.use(cors({
+    origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+    exposedHeaders: ["Content-Disposition"]
+}));
 
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    limit: 100,
+    limit: Number(process.env.RATE_LIMIT_MAX) || 100,
     standardHeaders: "draft-8",
     legacyHeaders: false
 });
@@ -64,6 +70,16 @@ app.use("/api/v1/tasks/:taskId/attachments", attachmentsRouter);
 // Error Handling Middleware
 app.use((err, req, res, next) => {
   console.error(err);
+
+  // Multer rejects oversized files with a MulterError; the fileFilter in
+  // upload.middleware.js rejects disallowed mimetypes with a plain Error.
+  if (err instanceof multer.MulterError) {
+    return sendError(res, 400, "FILE_ERROR", err.message);
+  }
+
+  if (err.message === "Unsupported file type") {
+    return sendError(res, 400, "FILE_ERROR", err.message);
+  }
 
   return sendError(res, 500, "INTERNAL_SERVER_ERROR", "An unexpected error occurred");
 });

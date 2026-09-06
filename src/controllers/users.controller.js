@@ -12,7 +12,7 @@ export const getAllUsersController = async (req, res) => {
     const users = await getAllUsers(page, limit);
 
     if(users == []) {
-        return sendError(res, 404, "No users found");
+        return sendError(res, 404, "NOT_FOUND", "No users found");
     }   
     
     return sendSuccess(res, 200, users);
@@ -24,7 +24,7 @@ export const getUserByIdController = async (req, res) => {
     const user = await getUserById(userId);
 
     if (!user) {
-        return sendError(res, 404, "User not found", formatValidationErrors([{ path: ["userId"], message: "User with the specified ID does not exist" }]));
+        return sendError(res, 404, "NOT_FOUND", "User not found", formatValidationErrors([{ path: ["userId"], message: "User with the specified ID does not exist" }]));
     }
     
     return sendSuccess(res, 200, user);
@@ -41,7 +41,7 @@ export const updateUserController = async (req, res) => {
     const updatedUser = await updateUser(userId, result.data);
 
     if (!updatedUser) {
-        return sendError(res, 404, "User not found");
+        return sendError(res, 404, "NOT_FOUND", "User not found");
     }
 
     return sendSuccess(res, 200, updatedUser);
@@ -52,7 +52,7 @@ export const deleteUserController = async (req, res) => {
     const deletedUser = await deleteUser(userId);
 
     if (!deletedUser) {
-        return sendError(res, 404, "User not found");
+        return sendError(res, 404, "NOT_FOUND", "User not found");
     }
 
     return sendSuccess(res, 200, deletedUser);

@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+/*
+ * PulseBoard design tokens.
+ * Yellow is the brand identity: it carries primary actions, the active nav rail
+ * and the logo mark. Everything else stays neutral zinc so the yellow reads as
+ * deliberate rather than decorative.
+ *
+ * Contrast note: yellow-on-white fails WCAG for text, so primary buttons always
+ * use near-black text on yellow, never white.
+ */
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --color-brand-50: #fefce8;
+  --color-brand-100: #fef9c3;
+  --color-brand-200: #fef08a;
+  --color-brand-300: #fde047;
+  --color-brand-400: #facc15;
+  --color-brand-500: #eab308;
+  --color-brand-600: #ca8a04;
+  --color-brand-700: #a16207;
+
+  --color-surface: #ffffff;
+  --color-canvas: #fafaf9;
+  --color-line: #e4e4e7;
+  --color-ink: #18181b;
+  --color-ink-muted: #71717a;
+  --color-ink-subtle: #a1a1aa;
+
+  --radius-xl: 0.75rem;
+}
+
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    @apply bg-canvas text-ink font-sans text-sm antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-semibold tracking-tight;
+  }
+
+  /* Consistent focus treatment across every interactive element. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand-400 ring-offset-2 ring-offset-canvas;
+  }
+}
+
+@layer utilities {
+  /* Thin scrollbars for the board columns and dev panel. */
+  .scrollbar-slim::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-slim::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-zinc-300;
+  }
+
+  .scrollbar-slim::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}

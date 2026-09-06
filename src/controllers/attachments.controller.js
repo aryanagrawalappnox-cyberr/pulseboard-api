@@ -33,11 +33,8 @@ export const getAttachmentsController = async (req, res) => {
     const taskId = Number(req.params.taskId);
 
     const attachments = await getAttachments(taskId);
-    if (!attachments || attachments.length === 0) {
-        return sendError(res, 404, "No attachments found for this task");
-    }
 
-    return sendSuccess(res, 200, attachments);
+    return sendSuccess(res, 200, attachments ?? []);
 };
 
 export const getAttachmentsByIdController = async (req, res) => {
@@ -46,7 +43,7 @@ export const getAttachmentsByIdController = async (req, res) => {
 
     const attachment = await getAttachmentById(taskId, attachmentId);
     if (!attachment) {
-        return sendError(res, 404, "Attachment not found");
+        return sendError(res, 404, "NOT_FOUND", "Attachment not found");
     }
 
     return sendSuccess(res, 200, attachment);
@@ -59,12 +56,13 @@ export const downloadAttachmentController = async (req, res) => {
     const attachment = await getAttachmentById(taskId, attachmentId);
 
     if (!attachment) {
-        return sendError(res, 404, "Attachment not found");
+        return sendError(res, 404, "NOT_FOUND", "Attachment not found");
     }
 
     const filePath = path.resolve(attachment.file_url);
 
-    return res.download(filePath);
+    // Files are stored under a generated UUID name; serve the original name to the client.
+    return res.download(filePath, attachment.file_name);
 };
 
 export const deleteAttachmentController = async (req, res) => {
@@ -74,7 +72,7 @@ export const deleteAttachmentController = async (req, res) => {
     const attachment = await getAttachmentById(taskId, attachmentId);
 
     if (!attachment) {
-        return sendError(res, 404, "Attachment not found");
+        return sendError(res, 404, "NOT_FOUND", "Attachment not found");
     }
 
     const filePath = path.resolve(attachment.file_url);
