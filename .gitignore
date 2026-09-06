@@ -30,3 +30,5 @@ skills-lock.json
 /src/generated/prisma
 
 future_scope.md
+# Uploaded attachments (written at runtime by multer)
+uploads/

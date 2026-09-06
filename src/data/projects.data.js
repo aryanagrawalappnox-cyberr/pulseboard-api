@@ -94,3 +94,53 @@ export async function createProject(projectData) {
 
     return project;
 }
+
+/**
+ * Hands ownership of a project to another of its members.
+ *
+ * The membership check and both writes share one transaction so a member
+ * cannot be removed between the check and the update, which would otherwise
+ * leave owner_id pointing at a non-member.
+ *
+ * Returns undefined when the target user is not a member of the project.
+ */
+export async function transferProjectOwnership(projectId, newOwnerId) {
+    return await prisma.$transaction(async (tx) => {
+        const membership = await tx.project_members.findUnique({
+            where: {
+                user_id_project_id: {
+                    user_id: newOwnerId,
+                    project_id: projectId
+                }
+            }
+        });
+
+        if (!membership) {
+            return undefined;
+        }
+
+        // The owner always holds Admin, so promote the incoming owner first.
+        await tx.project_members.update({
+            where: {
+                user_id_project_id: {
+                    user_id: newOwnerId,
+                    project_id: projectId
+                }
+            },
+            data: {
+                role: "Admin"
+            }
+        });
+
+        // The outgoing owner keeps their Admin membership and simply stops
+        // being the owner, so they can then be demoted or removed normally.
+        return await tx.projects.update({
+            where: {
+                id: projectId
+            },
+            data: {
+                owner_id: newOwnerId
+            }
+        });
+    });
+}

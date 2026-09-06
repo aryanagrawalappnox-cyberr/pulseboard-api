@@ -1,7 +1,19 @@
 import { sendError, sendSuccess } from "../utils/response.js";
 import { formatValidationErrors } from "../utils/validation.js";
 import { getProjectMembers, addProjectMember, updateProjectMember, deleteProjectMember} from "../data/projectMembers.data.js";
+import { getProjectById } from "../data/projects.data.js";
 import { createProjectMemberSchema, updateProjectMemberSchema } from "../schemas/projectMember.schema.js";
+
+/*
+ * The project owner must always hold the Admin role. createProject seeds them
+ * as Admin in a transaction; these guards keep that true for the lifetime of
+ * the project.
+ *
+ * Every write path is checked, not just the role update: guarding the update
+ * alone would leave the rule bypassable by removing the owner and adding them
+ * back as a Member.
+ */
+const OWNER_ROLE = "Admin";
 
 
 export const getProjectMembersController = async (req, res) => {
@@ -41,6 +53,21 @@ export const addProjectMemberController = async (req, res) => {
         []
     );
 }
+
+    const project = await getProjectById(projectId);
+
+    if (!project) {
+        return sendError(res, 404, "NOT_FOUND", "Project not found");
+    }
+
+    if (userId === project.owner_id && role !== OWNER_ROLE) {
+        return sendError(
+            res,
+            409,
+            "OWNER_MUST_BE_ADMIN",
+            "The project owner must be an Admin"
+        );
+    }
 
     const member = await addProjectMember(
         projectId,
@@ -91,6 +118,21 @@ export const updateProjectMemberController = async (req, res) => {
         );
     }
 
+    const project = await getProjectById(projectId);
+
+    if (!project) {
+        return sendError(res, 404, "NOT_FOUND", "Project not found");
+    }
+
+    if (userId === project.owner_id && result.data.role !== OWNER_ROLE) {
+        return sendError(
+            res,
+            409,
+            "OWNER_MUST_BE_ADMIN",
+            "The project owner must remain an Admin. Transfer ownership to another member first."
+        );
+    }
+
     const updatedMember = await updateProjectMember(
         projectId,
         userId,
@@ -98,7 +140,7 @@ export const updateProjectMemberController = async (req, res) => {
     );
 
     if (!updatedMember) {
-        return sendError(res, 404, "Project member not found");
+        return sendError(res, 404, "NOT_FOUND", "Project member not found");
     }
 
     return sendSuccess(res, 200, updatedMember);
@@ -123,13 +165,28 @@ export const deleteProjectMemberController = async (req, res) => {
     );
 }
 
+    const project = await getProjectById(projectId);
+
+    if (!project) {
+        return sendError(res, 404, "NOT_FOUND", "Project not found");
+    }
+
+    if (userId === project.owner_id) {
+        return sendError(
+            res,
+            409,
+            "OWNER_CANNOT_BE_REMOVED",
+            "The project owner cannot be removed. Transfer ownership to another member first."
+        );
+    }
+
     const deletedMember = await deleteProjectMember(
         projectId,
         userId
     );
 
     if (!deletedMember) {
-        return sendError(res, 404, "Project member not found");
+        return sendError(res, 404, "NOT_FOUND", "Project member not found");
     }
 
     return sendSuccess(res, 200, deletedMember);

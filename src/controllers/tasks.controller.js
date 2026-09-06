@@ -43,7 +43,7 @@ export const getProjectTasksByIdController = async (req, res) => {
     const tasks = await getProjectTasksById(projectId, taskId);
 
     if (!tasks) {
-        return sendError(res, 404, "Task not found", formatValidationErrors([{ path: ["taskId"], message: "Task with the specified ID does not exist" }]));
+        return sendError(res, 404, "NOT_FOUND", "Task not found", formatValidationErrors([{ path: ["taskId"], message: "Task with the specified ID does not exist" }]));
     }
 
     return sendSuccess(res, 200, tasks);
@@ -80,6 +80,7 @@ export const createProjectTaskController = async (req, res) => {
 };
 
 export const updateProjectTaskController = async (req, res) => {
+    const projectId = Number(req.params.projectId);
     const taskId = Number(req.params.taskId);
 
     if (
@@ -109,18 +110,19 @@ export const updateProjectTaskController = async (req, res) => {
         );
     }
 
-    const updatedTask = await updateProjectTasks(taskId, result.data, result.data);  
-    
+    const updatedTask = await updateProjectTasks(projectId, taskId, result.data);
+
     if (!updatedTask) {
-        return sendError(res, 404, "Task not found");
+        return sendError(res, 404, "NOT_FOUND", "Task not found");
     }
 
     return sendSuccess(res, 200, updatedTask);  
 };
 
 export const deleteProjectTaskController = async (req, res) => {
-    const taskId = Number(req.params.taskId);  
-    
+    const projectId = Number(req.params.projectId);
+    const taskId = Number(req.params.taskId);
+
     if (
         !Number.isInteger(projectId) ||
         projectId <= 0 ||
@@ -139,7 +141,7 @@ export const deleteProjectTaskController = async (req, res) => {
     const deletedTask = await deleteProjectTasks(projectId, taskId);
 
     if (!deletedTask) {
-        return sendError(res, 404, "Task not found", formatValidationErrors([{ path: ["taskId"], message: "Task with the specified ID does not exist" }]));
+        return sendError(res, 404, "NOT_FOUND", "Task not found", formatValidationErrors([{ path: ["taskId"], message: "Task with the specified ID does not exist" }]));
     }
 
     return sendSuccess(res, 200, deletedTask);

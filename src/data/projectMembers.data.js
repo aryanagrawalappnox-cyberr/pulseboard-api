@@ -4,6 +4,10 @@ function isRecordNotFound(error) {
   return error.code === "P2025";
 }
 
+function isUniqueConstraintError(error) {
+  return error.code === "P2002";
+}
+
 function formatProjectMember(member) {
   return {
     id: member.users.id,

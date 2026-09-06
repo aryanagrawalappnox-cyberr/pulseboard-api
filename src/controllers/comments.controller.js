@@ -44,10 +44,7 @@ export const getCommentByIdController = async (req, res) => {
     const comment = await getCommentById(taskId, commentId);
 
     if (!comment) {
-        return sendError(
-            res,
-            404,
-            "Comment not found",
+        return sendError(res, 404, "NOT_FOUND", "Comment not found",
             formatValidationErrors([
                 {
                     path: ["commentId"],
@@ -113,7 +110,7 @@ export const updateCommentController = async (req, res) => {
     const updatedComment = await updateComment(taskId, commentId, result.data);
 
     if (!updatedComment) {
-        return sendError(res, 404, "Comment not found");
+        return sendError(res, 404, "NOT_FOUND", "Comment not found");
     }
 
     return sendSuccess(res, 200, updatedComment);
@@ -140,7 +137,7 @@ export const deleteCommentController = async (req, res) => {
     const deletedComment = await deleteComment(taskId,commentId);
 
     if (!deletedComment) {
-        return sendError(res, 404, "Comment not found");
+        return sendError(res, 404, "NOT_FOUND", "Comment not found");
     }
 
     return sendSuccess(res, 200, deletedComment);
