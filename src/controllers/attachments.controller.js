@@ -2,6 +2,7 @@ import { createAttachment, getAttachments, getAttachmentById, deleteAttachment} 
 import { sendError, sendSuccess } from "../utils/response.js";
 import path from "path";
 import fs from "fs/promises";
+import { uploadQueue } from "../queue.js";
 
 export const createAttachmentController = async (req, res) => {
     const taskId = Number(req.params.taskId);
@@ -25,6 +26,13 @@ export const createAttachmentController = async (req, res) => {
         req.file.originalname,
         req.file.path
     );
+
+    await uploadQueue.add("processUpload", {
+        attachmentId: attachment.id,
+        taskId,
+        fileName: req.file.originalname,
+        filePath: req.file.path
+    });
 
     return sendSuccess(res, 201, attachment);
 };
