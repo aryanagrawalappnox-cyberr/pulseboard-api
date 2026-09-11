@@ -2,6 +2,7 @@ import { sendError, sendSuccess } from "../utils/response.js";
 import { createTaskSchema, updateTaskSchema} from "../schemas/task.schema.js";
 import { formatValidationErrors } from "../utils/validation.js";
 import { getProjectTasks, getProjectTasksById, createProjectTasks, updateProjectTasks, deleteProjectTasks} from "../data/tasks.data.js";
+import { emitToProject } from "../socket.js";
 
 export const getProjectTasksController = async (req, res) => {
     const projectId = Number(req.params.projectId);
@@ -75,6 +76,8 @@ export const createProjectTaskController = async (req, res) => {
     }
 
     const task = await createProjectTasks(projectId, result.data, req.user.id);
+
+    emitToProject(projectId, "taskCreated", task);
 
     return sendSuccess(res, 201, task);
 };
