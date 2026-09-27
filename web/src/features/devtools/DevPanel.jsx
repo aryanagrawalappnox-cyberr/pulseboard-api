@@ -16,6 +16,7 @@ const METHOD_TONE = {
   POST: "text-emerald-700 bg-emerald-50",
   PUT: "text-amber-700 bg-amber-50",
   DELETE: "text-red-700 bg-red-50",
+  WS: "text-violet-700 bg-violet-50",
 };
 
 function statusTone(status, ok) {

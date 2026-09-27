@@ -7,6 +7,7 @@ import { TaskBoard } from "../tasks/TaskBoard.jsx";
 import { MembersPanel } from "../members/MembersPanel.jsx";
 import { ProjectSettings } from "./ProjectSettings.jsx";
 import { useProjectRole } from "../../hooks/useProjectRole.js";
+import { useProjectSocket } from "../../hooks/useProjectSocket.js";
 import { useGetProjectQuery } from "../../services/endpoints/projects.api.js";
 import { cn } from "../../lib/cn.js";
 
@@ -23,6 +24,7 @@ export default function ProjectDetailPage() {
   const [tab, setTab] = useState("board");
   const { data: project, isLoading, error } = useGetProjectQuery(projectId);
   const { role } = useProjectRole(projectId);
+  useProjectSocket(projectId);
 
   if (isLoading) {
     return (
