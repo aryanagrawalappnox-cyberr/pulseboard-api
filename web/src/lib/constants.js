@@ -38,6 +38,13 @@ export const ACCEPTED_MIME_TYPES = [
 
 export const ACCEPTED_FILE_HINT = "JPG, PNG, PDF, DOC or DOCX, up to 5 MB";
 
+// migrations/011_add_status_to_attachments.sql — set by src/worker.js.
+export const ATTACHMENT_STATUS = {
+  PROCESSING: "processing",
+  READY: "ready",
+  FAILED: "failed",
+};
+
 export const STORAGE_KEY = "pulseboard.token";
 
 // GET /projects and GET /users are paginated but return no total count, so the

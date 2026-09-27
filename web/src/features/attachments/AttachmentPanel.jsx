@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { Button } from "../../components/ui/Button.jsx";
 import { Spinner } from "../../components/ui/Spinner.jsx";
+import { Badge } from "../../components/ui/Badge.jsx";
 import { ConfirmDialog } from "../../components/ui/Modal.jsx";
 import { RoleGate } from "../../components/RoleGate.jsx";
 import { useToast } from "../../hooks/useToast.js";
@@ -11,6 +12,7 @@ import { API_BASE_URL } from "../../services/baseQuery.js";
 import {
   ACCEPTED_FILE_HINT,
   ACCEPTED_MIME_TYPES,
+  ATTACHMENT_STATUS,
   MAX_FILE_SIZE,
 } from "../../lib/constants.js";
 import { formatRelative } from "../../lib/format.js";
@@ -68,14 +70,25 @@ function AttachmentRow({ attachment, taskId, projectId }) {
         </p>
       </div>
 
-      <button
-        type="button"
-        onClick={onDownload}
-        disabled={isDownloading}
-        className="text-[11px] text-ink-subtle transition-colors hover:text-ink disabled:opacity-50"
-      >
-        {isDownloading ? "…" : "Download"}
-      </button>
+      {/* The server refuses downloads until the upload worker has marked the
+          file ready; a socket event refreshes this row when it does. */}
+      {attachment.status === ATTACHMENT_STATUS.PROCESSING ? (
+        <Badge tone="brand" className="gap-1.5">
+          <Spinner className="size-3" />
+          Processing
+        </Badge>
+      ) : attachment.status === ATTACHMENT_STATUS.FAILED ? (
+        <Badge tone="danger">Failed</Badge>
+      ) : (
+        <button
+          type="button"
+          onClick={onDownload}
+          disabled={isDownloading}
+          className="text-[11px] text-ink-subtle transition-colors hover:text-ink disabled:opacity-50"
+        >
+          {isDownloading ? "…" : "Download"}
+        </button>
+      )}
 
       {/* DELETE is Admin-only on the server. */}
       <RoleGate projectId={projectId}>
@@ -124,7 +137,7 @@ export function AttachmentPanel({ taskId, projectId }) {
 
     try {
       await uploadAttachment({ taskId, file }).unwrap();
-      toast.success("File uploaded.");
+      toast.success("File uploaded. It will be downloadable once processing finishes.");
     } catch (error) {
       toast.error(error, "Could not upload the file.");
     }

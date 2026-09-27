@@ -43,6 +43,9 @@ const eventTags = (projectId) => ({
   commentDeleted: commentTags,
   attachmentCreated: attachmentTags,
   attachmentDeleted: attachmentTags,
+  // Processing outcomes from the upload worker, relayed by src/uploadEvents.js.
+  attachmentReady: attachmentTags,
+  attachmentFailed: attachmentTags,
 });
 
 /**

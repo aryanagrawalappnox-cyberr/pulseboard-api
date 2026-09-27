@@ -4,14 +4,40 @@ function isRecordNotFound(error) {
     return error.code === "P2025";
 }
 
+// Mirrors the CHECK constraint in migrations/011_add_status_to_attachments.sql.
+export const ATTACHMENT_STATUS = {
+    PROCESSING: "processing",
+    READY: "ready",
+    FAILED: "failed"
+};
+
 export async function createAttachment(taskId, fileName, fileUrl) {
     return await prisma.attachments.create({
         data: {
             file_name: fileName,
             file_url: fileUrl,
-            task_id: taskId
+            task_id: taskId,
+            // Stays 'processing' until src/worker.js finishes with the file.
+            status: ATTACHMENT_STATUS.PROCESSING
         }
     });
+}
+
+/** Returns undefined if the attachment was deleted in the meantime. */
+export async function updateAttachmentStatus(attachmentId, status) {
+    try {
+        return await prisma.attachments.update({
+            where: {
+                id: attachmentId
+            },
+            data: {
+                status
+            }
+        });
+    } catch (error) {
+        if (isRecordNotFound(error)) return undefined;
+        throw error;
+    }
 }
 
 export async function getAttachments(taskId) {

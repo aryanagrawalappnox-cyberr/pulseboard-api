@@ -1,4 +1,4 @@
-import { createAttachment, getAttachments, getAttachmentById, deleteAttachment} from "../data/attachments.data.js";
+import { createAttachment, getAttachments, getAttachmentById, deleteAttachment, updateAttachmentStatus, ATTACHMENT_STATUS} from "../data/attachments.data.js";
 import { sendError, sendSuccess } from "../utils/response.js";
 import path from "path";
 import fs from "fs/promises";
@@ -28,12 +28,22 @@ export const createAttachmentController = async (req, res) => {
         req.file.path
     );
 
-    await uploadQueue.add("processUpload", {
-        attachmentId: attachment.id,
-        taskId,
-        fileName: req.file.originalname,
-        filePath: req.file.path
-    });
+    try {
+        await uploadQueue.add("processUpload", {
+            attachmentId: attachment.id,
+            taskId,
+            // Lets src/uploadEvents.js broadcast the job's outcome to the right room.
+            projectId: req.projectId,
+            fileName: req.file.originalname,
+            filePath: req.file.path
+        });
+    } catch (error) {
+        // No job means nothing will ever finish processing this row, so mark
+        // it failed rather than leaving it stuck in 'processing'.
+        const failed = await updateAttachmentStatus(attachment.id, ATTACHMENT_STATUS.FAILED);
+        emitToProject(req.projectId, "attachmentCreated", failed ?? attachment);
+        throw error;
+    }
 
     emitToProject(req.projectId, "attachmentCreated", attachment);
 
@@ -68,6 +78,18 @@ export const downloadAttachmentController = async (req, res) => {
 
     if (!attachment) {
         return sendError(res, 404, "NOT_FOUND", "Attachment not found");
+    }
+
+    // Only serve files the upload worker has finished with.
+    if (attachment.status !== ATTACHMENT_STATUS.READY) {
+        return sendError(
+            res,
+            409,
+            "ATTACHMENT_NOT_READY",
+            attachment.status === ATTACHMENT_STATUS.FAILED
+                ? "This file failed processing and cannot be downloaded"
+                : "This file is still being processed"
+        );
     }
 
     const filePath = path.resolve(attachment.file_url);
