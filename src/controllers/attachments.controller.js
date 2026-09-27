@@ -3,6 +3,7 @@ import { sendError, sendSuccess } from "../utils/response.js";
 import path from "path";
 import fs from "fs/promises";
 import { uploadQueue } from "../queue.js";
+import { emitToProject } from "../socket.js";
 
 export const createAttachmentController = async (req, res) => {
     const taskId = Number(req.params.taskId);
@@ -33,6 +34,8 @@ export const createAttachmentController = async (req, res) => {
         fileName: req.file.originalname,
         filePath: req.file.path
     });
+
+    emitToProject(req.projectId, "attachmentCreated", attachment);
 
     return sendSuccess(res, 201, attachment);
 };
@@ -95,6 +98,8 @@ export const deleteAttachmentController = async (req, res) => {
     }
 
     const deletedAttachment = await deleteAttachment(taskId, attachmentId);
+
+    emitToProject(req.projectId, "attachmentDeleted", deletedAttachment);
 
     return sendSuccess(res, 200, deletedAttachment);
 };

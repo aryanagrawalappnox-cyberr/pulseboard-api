@@ -20,13 +20,19 @@ const taskTags = (projectId) => (task) =>
 const commentTags = (comment) =>
   comment?.task_id ? [{ type: "Comment", id: `TASK-${comment.task_id}` }] : [];
 
+// Same scoping as comments: task_id only, delivered to this project's room.
+const attachmentTags = (attachment) =>
+  attachment?.task_id
+    ? [{ type: "Attachment", id: `TASK-${attachment.task_id}` }]
+    : [];
+
 /**
  * Server events (src/controllers/*.controller.js) mapped to the RTK Query
  * cache tags they make stale. Payloads are raw rows without the author's
  * name, so affected lists are refetched rather than patched in place.
  *
- * A comment list is only cached while its task drawer is open, so events for
- * other tasks invalidate nothing and cost no requests.
+ * Comment and attachment lists are only cached while their task drawer is
+ * open, so events for other tasks invalidate nothing and cost no requests.
  */
 const eventTags = (projectId) => ({
   taskCreated: taskTags(projectId),
@@ -35,11 +41,13 @@ const eventTags = (projectId) => ({
   commentCreated: commentTags,
   commentUpdated: commentTags,
   commentDeleted: commentTags,
+  attachmentCreated: attachmentTags,
+  attachmentDeleted: attachmentTags,
 });
 
 /**
  * Keeps a project live: joins its Socket.IO room and refetches tasks and the
- * open task's comments when any member changes them.
+ * open task's comments and attachments when any member changes them.
  */
 export function useProjectSocket(projectId) {
   const dispatch = useDispatch();
