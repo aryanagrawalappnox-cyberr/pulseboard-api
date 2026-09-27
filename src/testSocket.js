@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
 
-const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjE2LCJpYXQiOjE3OTA1MzA4MjEsImV4cCI6MTc5MDUzNDQyMX0.jJzd5xL6CN7GluulyWNOrF3pDzv-4ZKePPApibzH8QU";
+const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjE2LCJpYXQiOjE3OTA1NDU3NzksImV4cCI6MTc5MDU0OTM3OX0.jNyijvI_CxTrL24fA_EnRHshF3SQY_7V89TJp1OUM1c";
 
 const socket = io("http://localhost:3000", {
     auth: {
@@ -14,6 +14,10 @@ socket.on("connect", () => {
     socket.emit("joinProject", 21);
 
     
+});
+
+socket.on("commentCreated", (comment) => {
+    console.log("Comment created:", comment);
 });
 
 socket.on("taskCreated", (task) => {

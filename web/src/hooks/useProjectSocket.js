@@ -5,15 +5,41 @@ import { logRequest } from "../features/devtools/devLogSlice.js";
 import { api } from "../services/api.js";
 import { getSocket } from "../services/socket.js";
 
-// Task events broadcast by src/controllers/tasks.controller.js.
-const TASK_EVENTS = ["taskCreated", "taskUpdated", "taskDeleted"];
+const taskTags = (projectId) => (task) =>
+  // Task payloads carry project_id, so ignore anything for another project.
+  Number(task?.project_id) === projectId
+    ? [
+        { type: "Task", id: `PROJECT-${projectId}` },
+        // Also refresh a single-task query for this id, if one is cached.
+        { type: "Task", id: task.id },
+      ]
+    : [];
+
+// Comment payloads carry task_id but no project_id; they are only ever
+// delivered to this project's room, which already scopes them.
+const commentTags = (comment) =>
+  comment?.task_id ? [{ type: "Comment", id: `TASK-${comment.task_id}` }] : [];
 
 /**
- * Keeps a project's board live: joins the project's Socket.IO room and
- * refetches the task list when any member creates, updates or deletes a task.
+ * Server events (src/controllers/*.controller.js) mapped to the RTK Query
+ * cache tags they make stale. Payloads are raw rows without the author's
+ * name, so affected lists are refetched rather than patched in place.
  *
- * Event payloads are raw task rows without the author's name, so the list is
- * invalidated and refetched rather than patched in place.
+ * A comment list is only cached while its task drawer is open, so events for
+ * other tasks invalidate nothing and cost no requests.
+ */
+const eventTags = (projectId) => ({
+  taskCreated: taskTags(projectId),
+  taskUpdated: taskTags(projectId),
+  taskDeleted: taskTags(projectId),
+  commentCreated: commentTags,
+  commentUpdated: commentTags,
+  commentDeleted: commentTags,
+});
+
+/**
+ * Keeps a project live: joins its Socket.IO room and refetches tasks and the
+ * open task's comments when any member changes them.
  */
 export function useProjectSocket(projectId) {
   const dispatch = useDispatch();
@@ -40,22 +66,15 @@ export function useProjectSocket(projectId) {
     // than once.
     const onConnect = () => socket.emit("joinProject", projectId);
 
-    // One handler per event so each can be logged under its own name and
+    // One handler per event so each is logged under its own name and can be
     // detached precisely on cleanup.
-    const taskHandlers = TASK_EVENTS.map((event) => [
+    const handlers = Object.entries(eventTags(projectId)).map(([event, tagsFor]) => [
       event,
-      (task) => {
-        log(event, task);
+      (payload) => {
+        log(event, payload);
 
-        if (Number(task?.project_id) !== projectId) return;
-
-        dispatch(
-          api.util.invalidateTags([
-            { type: "Task", id: `PROJECT-${projectId}` },
-            // Also refresh a single-task query for this id, if one is cached.
-            { type: "Task", id: task.id },
-          ])
-        );
+        const tags = tagsFor(payload);
+        if (tags.length) dispatch(api.util.invalidateTags(tags));
       },
     ]);
 
@@ -63,7 +82,7 @@ export function useProjectSocket(projectId) {
     const onConnectError = (error) => log("connect_error", error.message, false);
 
     socket.on("connect", onConnect);
-    taskHandlers.forEach(([event, handler]) => socket.on(event, handler));
+    handlers.forEach(([event, handler]) => socket.on(event, handler));
     socket.on("projectError", onProjectError);
     socket.on("connect_error", onConnectError);
 
@@ -76,7 +95,7 @@ export function useProjectSocket(projectId) {
     return () => {
       socket.emit("leaveProject", projectId);
       socket.off("connect", onConnect);
-      taskHandlers.forEach(([event, handler]) => socket.off(event, handler));
+      handlers.forEach(([event, handler]) => socket.off(event, handler));
       socket.off("projectError", onProjectError);
       socket.off("connect_error", onConnectError);
     };

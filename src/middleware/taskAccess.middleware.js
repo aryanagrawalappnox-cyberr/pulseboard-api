@@ -66,6 +66,8 @@ export const taskAccessMiddleware = (requiredRoles) => {
             projectId: task.project_id
         };
 
+        req.projectId = task.project_id;
+
         next();
     };
 };
